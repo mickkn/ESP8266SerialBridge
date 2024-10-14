@@ -12,8 +12,8 @@
 //##define MODE_AP              // Access Point mode (phone connects directly to ESP) (no router)
 #define MODE_ST                 // Station mode (connect to router)
 
-#define PROTOCOL_TCP
-//#define PROTOCOL_UDP
+#define PROTOCOL_TCP            // TCP protocol, comment out for UDP
+
 bool debug = true;
 
 #define VERSION "1.00"
@@ -54,9 +54,7 @@ WiFiServer server_0(UART0_PORT);                  // create an instance of the s
 WiFiServer server_1(UART1_PORT);                  // create an instance of the server
 WiFiServer *server[NUM_COM] = {&server_0, &server_1};   // create an instance of the server
 WiFiClient TCPClient[NUM_COM][MAX_NMEA_CLIENTS];        // create an array to store the clients
-#endif
-
-#ifdef PROTOCOL_UDP
+#else
 #include <WiFiUdp.h>        // include the UDP library     
 WiFiUDP udp;                // create an instance of the UDP library
 IPAddress remoteIp;         // create an instance of the IPAddress class
@@ -151,8 +149,7 @@ void loop() {
             TmpserverClient.stop();
         }
     }
-    #endif
-
+    
     for (int num = 0; num < NUM_COM ; num++) {
 
         if (COM[num] != NULL) {
@@ -197,5 +194,41 @@ void loop() {
             }
         } 
     }
+    #else
+
+    for (int num = 0; num < NUM_COM ; num++) {
+
+        // Check for incoming UDP packets
+        int packetSize = udp.parsePacket();
+        if (packetSize) {
+            // We have received a packet, read it
+            int len = udp.read(buf1[num], bufferSize);
+            if (len > 0) {
+                buf1[num][len] = 0; // Null-terminate the buffer
+            }
+            
+            // Write the received data to the UART
+            COM[num]->write(buf1[num], len);
+        }
+
+        // Check if UART has data to send over UDP
+        if (COM[num]->available()) {
+
+            char myBuffer[bufferSize];   // Fixed-size buffer for UART data
+            int length = 0;              // Keep track of the length of data
+
+            // Read available data from the UART
+            while (COM[num]->available() && length < bufferSize - 1) {
+                myBuffer[length++] = (char)COM[num]->read();  // Read char from UART(num)
+            }
+            myBuffer[length] = '\0';  // Null-terminate the string
+
+            // Send the received data over UDP
+            udp.beginPacket(remoteIp, UART0_PORT + num); // Send to appropriate port (adjust if needed)
+            udp.write(myBuffer, length);
+            udp.endPacket();  // Finish the packet
+        }
+    }
+    #endif
 }
 
