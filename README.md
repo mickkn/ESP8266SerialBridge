@@ -10,7 +10,7 @@ Serial Wi-Fi Bridge for Kamstrup 403 Home Assistants Integration
     * Some power for the ESP8266 and CP2101 IR Eye
 
 ### Hardware
-![Hardware Diagram](diagram.png)
+![Hardware Diagram](diagram.jpg)
 Power the ESP8266 with USB, and power the CP210x with the same USB.
 Levelshift the ESP8266 3V logic with the 5V logic from the CP210x. 
 The CP210x IR eye is connected to the Kamstrup 403 IR Eye.
