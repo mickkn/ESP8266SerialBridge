@@ -1,5 +1,5 @@
 # ESP8266SerialBridge
-Serial Bridge for Kamstrup 403 Home Assistents Integration
+Serial Wi-Fi Bridge for Kamstrup 403 Home Assistants Integration
 
 ## Usage
 
@@ -10,8 +10,10 @@ Serial Bridge for Kamstrup 403 Home Assistents Integration
     * Some power for the ESP8266 and CP2101 IR Eye
 
 ### Hardware
-Hardware connection diagram in the making....  
-But basically levelshift the CP2101 and ESP module and power both.
+![Hardware Diagram](diagram.png)
+Power the ESP8266 with USB, and power the CP210x with the same USB.
+Levelshift the ESP8266 3V logic with the 5V logic from the CP210x. 
+The CP210x IR eye is connected to the Kamstrup 403 IR Eye.
 
 ### Software
 1. Open the .ino file in Arduino IDE.
@@ -26,7 +28,7 @@ http://arduino.esp8266.com/stable/package_esp8266com_index.json,https://dl.espre
 ### Home Assistent
 Install this [ha-kamstrup_403](https://github.com/golles/ha-kamstrup_403)
 
-When starting the integration and are asked for Serial Port, input the IP of the ESP and port 8880 for UART0 and 8881 for UART1.
+When starting the integration and are asked for Serial Port, input the IP of the ESP and port, 8880 for UART0 and 8881 for UART1.
 
 ```bash
 socket://1.2.3.4:8880

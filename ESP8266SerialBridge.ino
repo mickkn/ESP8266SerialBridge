@@ -28,8 +28,8 @@ IPAddress netmask(255, 255, 255, 0);    // Netmask of the ESP
 
 #ifdef MODE_ST
 // For Station mode:
-const char *ssid = "";                  // This is the SSID of the WiFi network
-const char *pw = "";                    // and this is the PASSWORD
+const char *ssid = "Slice of Life";                  // This is the SSID of the WiFi network
+const char *pw = "dextermorgan1226";                    // and this is the PASSWORD
 const char *hostname = "ESP8266UART";   // This is the hostname of the ESP
 #endif
 
