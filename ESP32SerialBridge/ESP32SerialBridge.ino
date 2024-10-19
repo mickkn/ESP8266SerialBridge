@@ -1,13 +1,13 @@
 /*
-:File:        ESP8266SerialBridge.ino
+:File:        ESP32SerialBridge.ino
 
-:Details:     ESP8266 WiFi <-> UART Bridge
+:Details:     ESP32 WiFi <-> UART Bridge
 
 :Date:        14-10-2024
 :Author:      Mick K.
 */
 
-#include <ESP8266WiFi.h>
+#include <WiFi.h>
 
 //##define MODE_AP              // Access Point mode (phone connects directly to ESP) (no router)
 #define MODE_ST                 // Station mode (connect to router)
@@ -21,26 +21,26 @@ bool debug = true;
 // For Access Point mode:
 const char *ssid = "SerialWifi";        // This is the SSID
 const char *pw = "123456789";           // and this is the PASSWORD
-const char *hostname = "ESP8266UART";   // This is the hostname of the ESP
+const char *hostname = "ESP32UART";     // This is the hostname of the ESP
 IPAddress ip(192, 168, 4, 1);           // IP address of the ESP
 IPAddress netmask(255, 255, 255, 0);    // Netmask of the ESP
 #endif
 
 #ifdef MODE_ST
 // For Station mode:
-const char *ssid = "Slice of Life";                  // This is the SSID of the WiFi network
-const char *pw = "dextermorgan1226";                    // and this is the PASSWORD
-const char *hostname = "ESP8266UART";   // This is the hostname of the ESP
+const char *ssid = "";                  // This is the SSID of the WiFi network
+const char *pw = "";                    // and this is the PASSWORD
+const char *hostname = "ESP32UART";   // This is the hostname of the ESP
 #endif
 
 /*************************  COM Port 0 *******************************/
 #define UART0_BAUD 1200                 // Baudrate UART0 (default 1200)
 #define UART0_PARAM SERIAL_8N1          // Data/Parity/Stop UART0
-#define UART0_PORT 8880             // Wifi Port UART0
+#define UART0_PORT 8880                 // Wifi Port UART0
 /*************************  COM Port 1 *******************************/
 #define UART1_BAUD 1200                 // Baudrate UART1 (default 1200)
 #define UART1_PARAM SERIAL_8N1          // Data/Parity/Stop UART1
-#define UART1_PORT 8881             // Wifi Port UART1
+#define UART1_PORT 8881                 // Wifi Port UART1
 /*********************************************************************/
 #define bufferSize 1024                 // Buffer size for UART data
 #define MAX_NMEA_CLIENTS 4              // Maximum number of clients
@@ -49,7 +49,7 @@ const char *hostname = "ESP8266UART";   // This is the hostname of the ESP
 /*********************************************************************/
 
 #ifdef PROTOCOL_TCP
-#include <WiFiClient.h>                                 // include the TCP library
+#include <WiFiClient.h>                           // include the TCP library
 WiFiServer server_0(UART0_PORT);                  // create an instance of the server
 WiFiServer server_1(UART1_PORT);                  // create an instance of the server
 WiFiServer *server[NUM_COM] = {&server_0, &server_1};   // create an instance of the server
@@ -73,8 +73,8 @@ void setup() {
 
     delay(500);   // Delay to allow the serial port to initialize
 
-    COM[0]->begin(UART0_BAUD, UART0_PARAM, SERIAL_FULL);
-    COM[1]->begin(UART1_BAUD, UART1_PARAM, SERIAL_FULL);
+    COM[0]->begin(UART0_BAUD, UART0_PARAM);
+    COM[1]->begin(UART1_BAUD, UART1_PARAM);
 
     if (debug) COM[DEBUG_COM]->println("\n\nESP8266 WiFi <-> UART Bridge v" VERSION);
     
