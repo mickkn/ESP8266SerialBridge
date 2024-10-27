@@ -1,234 +1,156 @@
 /*
 :File:        ESP8266SerialBridge.ino
-
-:Details:     ESP8266 WiFi <-> UART Bridge
-
+:Details:     ESP8266 WiFi <-> UART Bridge using Software UART
 :Date:        14-10-2024
 :Author:      Mick K.
 */
 
 #include <ESP8266WiFi.h>
-
-//##define MODE_AP              // Access Point mode (phone connects directly to ESP) (no router)
-#define MODE_ST                 // Station mode (connect to router)
-
-#define PROTOCOL_TCP            // TCP protocol, comment out for UDP
+#include <WiFiClient.h>
+#include <SoftwareSerial.h>  // Include the SoftwareSerial library
 
 bool debug = true;
 
 #define VERSION "1.00"
-#ifdef MODE_AP
-// For Access Point mode:
-const char *ssid = "SerialWifi";        // This is the SSID
-const char *pw = "123456789";           // and this is the PASSWORD
-const char *hostname = "ESP8266UART";   // This is the hostname of the ESP
-IPAddress ip(192, 168, 4, 1);           // IP address of the ESP
-IPAddress netmask(255, 255, 255, 0);    // Netmask of the ESP
-#endif
 
-#ifdef MODE_ST
-// For Station mode:
-const char *ssid = "";                  // This is the SSID of the WiFi network
-const char *pw = "";                    // and this is the PASSWORD
-const char *hostname = "ESP8266UART";   // This is the hostname of the ESP
-#endif
+// WiFi Configuration
+const char *ssid = "";
+const char *pw = "";
+const char *hostname = "ESP8266UART";
 
-/*************************  COM Port 0 *******************************/
-#define UART0_BAUD 1200                 // Baudrate UART0 (default 1200)
-#define UART0_PARAM SERIAL_8N1          // Data/Parity/Stop UART0
-#define UART0_PORT 8880             // Wifi Port UART0
-/*************************  COM Port 1 *******************************/
-#define UART1_BAUD 1200                 // Baudrate UART1 (default 1200)
-#define UART1_PARAM SERIAL_8N1          // Data/Parity/Stop UART1
-#define UART1_PORT 8881             // Wifi Port UART1
-/*********************************************************************/
-#define bufferSize 1024                 // Buffer size for UART data
-#define MAX_NMEA_CLIENTS 4              // Maximum number of clients
-#define NUM_COM 2                       // Number of COM ports
-#define DEBUG_COM 0                     // Debug COM port
-/*********************************************************************/
+// COM Port Configuration
+#define UART0_BAUD 1200  // Baud rate for Software UART0
+#define UART1_BAUD 1200  // Baud rate for Software UART1
+#define UART0_PORT 8880  // WiFi Port for Software UART0
+#define UART1_PORT 8881  // WiFi Port for Software UART1
+#define bufferSize 1024  // Buffer size for UART data
+#define MAX_NMEA_CLIENTS 4
+#define NUM_COM 2
+#define DEBUG_COM 1  // Debug COM port 1
 
-#ifdef PROTOCOL_TCP
-#include <WiFiClient.h>                                 // include the TCP library
-WiFiServer server_0(UART0_PORT);                  // create an instance of the server
-WiFiServer server_1(UART1_PORT);                  // create an instance of the server
-WiFiServer *server[NUM_COM] = {&server_0, &server_1};   // create an instance of the server
-WiFiClient TCPClient[NUM_COM][MAX_NMEA_CLIENTS];        // create an array to store the clients
-#else
-#include <WiFiUdp.h>        // include the UDP library     
-WiFiUDP udp;                // create an instance of the UDP library
-IPAddress remoteIp;         // create an instance of the IPAddress class
-#endif
+// SoftwareSerial definitions: Debug UART on GPIO0 (D3) and GPIO2 (D4)
+SoftwareSerial softSerial0(14, 12, true);  // RX = GPIO14 (D5), TX = GPIO12 (D6)
 
-// Define the COM ports
-HardwareSerial* COM[NUM_COM] = {&Serial, &Serial1};
+// Secondary UART on GPIO14 (D5) and GPIO12 (D6)
+SoftwareSerial softSerial1(0, 2);  // RX = GPIO0 (D3), TX = GPIO2 (D4) for debug
 
+// Map the COM array to SoftwareSerial instances
+SoftwareSerial *COM[NUM_COM] = {&softSerial0, &softSerial1};
+
+// WiFi server instances for each COM port
+WiFiServer server_0(UART0_PORT);
+WiFiServer server_1(UART1_PORT);
+WiFiServer *server[NUM_COM] = {&server_0, &server_1};
+
+// TCP client array for each COM port
+WiFiClient TCPClient[NUM_COM][MAX_NMEA_CLIENTS];
+
+// Buffers for reading and writing data
 uint8_t buf1[NUM_COM][bufferSize];
-uint16_t i1[NUM_COM] = {0,0};
-
+uint16_t i1[NUM_COM] = {0, 0};
 uint8_t buf2[bufferSize];
-uint16_t i2[NUM_COM] = {0,0};
+uint16_t i2[NUM_COM] = {0, 0};
 
 void setup() {
+    delay(500);
 
-    delay(500);   // Delay to allow the serial port to initialize
-
-    COM[0]->begin(UART0_BAUD, UART0_PARAM, SERIAL_FULL);
-    COM[1]->begin(UART1_BAUD, UART1_PARAM, SERIAL_FULL);
+    // Begin SoftwareSerial for each COM port
+    COM[0]->begin(UART0_BAUD);
+    COM[1]->begin(UART1_BAUD);
 
     if (debug) COM[DEBUG_COM]->println("\n\nESP8266 WiFi <-> UART Bridge v" VERSION);
-    
-    #ifdef MODE_AP
-        if (debug) COM[DEBUG_COM]->println("Open ESP Access Point mode");
-        WiFi.mode(WIFI_AP);
-        WiFi.hostname(hostname);
-        WiFi.softAPConfig(ip, ip, netmask); // configure ip address for softAP
-        WiFi.softAP(ssid, pw); // configure ssid and password for softAP
-    #endif
 
+    // Initialize WiFi connection
+    if (debug) COM[DEBUG_COM]->println("Open ESP Station mode");
+    if (debug) COM[DEBUG_COM]->println("This is DEBUG on UART1 that will print all data flow.");
+    WiFi.mode(WIFI_STA);
+    WiFi.hostname(hostname);
+    WiFi.begin(ssid, pw);
+    if (debug) COM[DEBUG_COM]->println("Connecting to Wireless network: ");
+    if (debug) COM[DEBUG_COM]->println(ssid);
+    while (WiFi.status() != WL_CONNECTED) {
+        delay(500);
+        if (debug) COM[DEBUG_COM]->print(".");
+    }
+    if (debug) COM[DEBUG_COM]->println("\nWiFi connected");
 
-    #ifdef MODE_ST
-        if (debug) COM[DEBUG_COM]->println("Open ESP Station mode");
-        WiFi.mode(WIFI_STA);
-        WiFi.hostname(hostname);
-        WiFi.begin(ssid, pw);
-        if (debug) COM[DEBUG_COM]->println("try to Connect to Wireless network: ");
-        if (debug) COM[DEBUG_COM]->println(ssid);
-        while (WiFi.status() != WL_CONNECTED) {
-            delay(500);
-            if (debug) COM[DEBUG_COM]->print(".");
-        }
-        if (debug) COM[DEBUG_COM]->println("\nWiFi connected");
-    #endif
-
-
-    #ifdef PROTOCOL_TCP
-        Serial.println("Starting TCP Server 0");
-        if (debug) COM[DEBUG_COM]->println("Starting TCP Server 0");
-        server[0]->begin();
-        server[0]->setNoDelay(true);
-        COM[1]->println("Starting TCP Server 1");
-        if (debug) COM[DEBUG_COM]->println("Starting TCP Server 1");
-        server[1]->begin();
-        server[1]->setNoDelay(true);
-    #endif
-
-    #ifdef PROTOCOL_UDP
-        if (debug) COM[DEBUG_COM]->println("Starting UDP Server 0");
-        udp.begin(UART0_PORT);
-
-        if (debug) COM[DEBUG_COM]->println("Starting UDP Server 1");
-        udp.begin(UART1_PORT);
-    #endif
+    // Start TCP Servers for each COM port
+    server[0]->begin();
+    server[0]->setNoDelay(true);
+    server[1]->begin();
+    server[1]->setNoDelay(true);
 }
-
 
 void loop() {
 
-    #ifdef PROTOCOL_TCP
-    for (int num = 0; num < NUM_COM ; num++) {
-
+    // Check for new clients and manage existing clients for each COM port
+    for (int num = 0; num < NUM_COM; num++) {
         if (server[num]->hasClient()) {
-
             for (byte i = 0; i < MAX_NMEA_CLIENTS; i++) {
-
-                    // Find free/disconnected spot.
-                    if (!TCPClient[num][i] || !TCPClient[num][i].connected()) {
+                if (!TCPClient[num][i] || !TCPClient[num][i].connected()) {
                     if (TCPClient[num][i]) TCPClient[num][i].stop();
                     TCPClient[num][i] = server[num]->available();
-                    if (debug) COM[DEBUG_COM]->print("New client for COM");
-                    if (debug) COM[DEBUG_COM]->print(num);
-                    if (debug) COM[DEBUG_COM]->print('/');
-                    if (debug) COM[DEBUG_COM]->println(i);
+                    if (debug) {
+                        COM[DEBUG_COM]->print("New client for COM");
+                        COM[DEBUG_COM]->print(num);
+                        COM[DEBUG_COM]->print('/');
+                        COM[DEBUG_COM]->println(i);
+                    }
                     continue;
                 }
             }
-
-            // No free/disconnected spot so reject
-            WiFiClient TmpserverClient = server[num]->available();
-            TmpserverClient.stop();
+            // Reject client if no free/disconnected spot
+            WiFiClient tmpClient = server[num]->available();
+            tmpClient.stop();
         }
     }
-    
-    for (int num = 0; num < NUM_COM ; num++) {
 
-        if (COM[num] != NULL) {
-
+    // Process UART data and send to WiFi clients
+    for (int num = 0; num < NUM_COM; num++) {
+        if (COM[num]) {
             for (byte cln = 0; cln < MAX_NMEA_CLIENTS; cln++) {
-
                 if (TCPClient[num][cln]) {
-
                     while (TCPClient[num][cln].available()) {
-
-                        buf1[num][i1[num]] = TCPClient[num][cln].read(); // Read char from WiFi client
-                        if (i1[num] < bufferSize - 1) i1[num]++; // Increment the index
+                        buf1[num][i1[num]] = TCPClient[num][cln].read();
+                        if (i1[num] < bufferSize - 1) i1[num]++;
                     }
 
-                    COM[num]->write(buf1[num], i1[num]); // Write the buffer to the UART
+                    // Write to the UART
+                    COM[num]->write(buf1[num], i1[num]);
+
+                    // Send data to the debug channel if debug is enabled
+                    if (debug) {
+                        COM[DEBUG_COM]->write(buf1[num], i1[num]);
+                    }
+
                     i1[num] = 0;
                 }
             }
 
+            // Read from UART and send to WiFi clients
             if (COM[num]->available()) {
+                char myBuffer[bufferSize];
+                int length = 0;
 
-                char myBuffer[bufferSize];   // Fixed-size buffer for UART data
-                int length = 0;              // Keep track of the length of data
-
-                // Read available data from the UART
                 while (COM[num]->available() && length < bufferSize - 1) {
-
-                    myBuffer[length++] = (char)COM[num]->read();  // Read char from UART(num)
+                    myBuffer[length++] = (char)COM[num]->read();
                 }
-                myBuffer[length] = '\0';  // Null-terminate the string
+                myBuffer[length] = '\0';
 
-                // Now send the received data to the WiFi clients
+                // Send the buffer to each connected WiFi client
                 for (byte cln = 0; cln < MAX_NMEA_CLIENTS; cln++) {
-
                     if (TCPClient[num][cln] && TCPClient[num][cln].connected()) {
-
-                        TCPClient[num][cln].write(myBuffer, length);  // Send the buffer to the client
+                        TCPClient[num][cln].write(myBuffer, length);
                     }
                 }
 
-                i2[num] = 0;  // Reset the index
+                // Send the buffer to the debug channel if debug is enabled
+                if (debug) {
+                    COM[DEBUG_COM]->write(myBuffer, length);
+                }
+
+                i2[num] = 0;
             }
-        } 
-    }
-    #else
-
-    for (int num = 0; num < NUM_COM ; num++) {
-
-        // Check for incoming UDP packets
-        int packetSize = udp.parsePacket();
-        if (packetSize) {
-            // We have received a packet, read it
-            int len = udp.read(buf1[num], bufferSize);
-            if (len > 0) {
-                buf1[num][len] = 0; // Null-terminate the buffer
-            }
-            
-            // Write the received data to the UART
-            COM[num]->write(buf1[num], len);
-        }
-
-        // Check if UART has data to send over UDP
-        if (COM[num]->available()) {
-
-            char myBuffer[bufferSize];   // Fixed-size buffer for UART data
-            int length = 0;              // Keep track of the length of data
-
-            // Read available data from the UART
-            while (COM[num]->available() && length < bufferSize - 1) {
-                myBuffer[length++] = (char)COM[num]->read();  // Read char from UART(num)
-            }
-            myBuffer[length] = '\0';  // Null-terminate the string
-
-            // Send the received data over UDP
-            udp.beginPacket(remoteIp, UART0_PORT + num); // Send to appropriate port (adjust if needed)
-            udp.write(myBuffer, length);
-            udp.endPacket();  // Finish the packet
         }
     }
-    #endif
 }
-
