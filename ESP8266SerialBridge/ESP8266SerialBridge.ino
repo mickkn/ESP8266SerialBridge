@@ -61,7 +61,11 @@ void setup() {
         delay(500);
         if (debug) Serial.print(".");
     }
-    if (debug) Serial.println("\nWiFi connected");
+    if (debug) {
+        Serial.println("\nWiFi connected");
+        Serial.print("IP address: ");
+        Serial.println(WiFi.localIP());
+    }
 
     // Start TCP Server
     server.begin();

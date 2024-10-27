@@ -11,7 +11,8 @@ The sketch reads data from the SoftwareSerial port and sends it to the
 connected clients. The sketch also reads data from the connected clients 
 and sends it to the SoftwareSerial port.
 
-The IrDA should be connected to GPIO14 (D5) and GPIO12 (D6) and 3V and GND.
+(ESP8266) The IrDA should be connected to GPIO14 (D5), GPIO12 (D6), 3V and GND.
+(ESP32) The IrDA should be connected to TX2, RX2, 3V and GND
 
 When powered up, the IrDA Light can be checked with a iPhone front camera,
 and should only light up when data is sent. If not the inverted flag should be toggled.
