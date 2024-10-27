@@ -1,19 +1,36 @@
 # ESP8266/ESP32 Wi-Fi Serial Bridge
 Serial Wi-Fi Bridge for Kamstrup 403 Home Assistants Integration
 
+This sketch creates a WiFi <-> UART bridge using the ESPxxx module. 
+
+The sketch uses SoftwareSerial to create a COM port for the IrDA communication. 
+
+The sketch creates a TCP server and listens for incoming connections. 
+
+The sketch reads data from the SoftwareSerial port and sends it to the 
+connected clients. The sketch also reads data from the connected clients 
+and sends it to the SoftwareSerial port.
+
+The IrDA should be connected to GPIO14 (D5) and GPIO12 (D6) and 3V and GND.
+
+When powered up, the IrDA Light can be checked with a iPhone front camera,
+and should only light up when data is sent. If not the inverted flag should be toggled.
+
 ## Usage
 
 * Requirements
     * ESP8266/ESP32 devkit module (a cheap clone can do)
     * [IR Eye with RS232 interface](https://www.aliexpress.com/item/1005005630726621.html?spm=a2g0o.order_list.order_list_main.17.70c71802tpHpcY)
-    * [Logic Level Converter 3V3-5V](https://www.aliexpress.com/item/1005005984772131.html?spm=a2g0o.order_list.order_list_main.11.2f711802RFZWUl)
     * Some power for the ESP Module and CP2101 IR Eye
 
 ### Hardware
-![Hardware Diagram](diagram.jpg)
-Power the ESP Module with USB, and power the IR Eye with the same USB 5V Power.
-Levelshift the ESP 3V3 logic with the 5V logic from the IR Eye. (The IR eye might support 3V3, so a levelshifter is maybe not needed)
-The CP210x IR eye is connected to the Kamstrup 403 IR Eye.
+![Hardware Diagram](img/diagram.jpg)
+Power the ESP Module with USB, and power the IR Eye with the 3V Power from the Devkit.
+
+<div style="display: flex; justify-content: space-around;">
+  <img src="img/irda.jpg" alt="IRDA" style="width: 45%;"/>
+  <img src="img/esp.jpg" alt="ESP" style="width: 45%;"/>
+</div>
 
 ### Software
 1. Open the .ino file in Arduino IDE.
@@ -28,7 +45,7 @@ http://arduino.esp8266.com/stable/package_esp8266com_index.json,https://dl.espre
 ### Home Assistent
 Install this [ha-kamstrup_403](https://github.com/golles/ha-kamstrup_403)
 
-When starting the integration and are asked for Serial Port, input the IP of the ESP and port, 8880 for UART0 and 8881 for UART1.
+When starting the integration and are asked for Serial Port, input the IP of the ESP and port, 8880.
 
 ```bash
 socket://1.2.3.4:8880

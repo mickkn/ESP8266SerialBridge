@@ -5,22 +5,6 @@
 :Author:      Mick K.
 */
 
-/*
-Description:
-
-This sketch creates a WiFi <-> UART bridge using the ESP8266 module. 
-The sketch uses SoftwareSerial to create a COM port for the IrDA communication. 
-The sketch creates a TCP server and listens for incoming connections. 
-The sketch reads data from the SoftwareSerial port and sends it to the 
-connected clients. The sketch also reads data from the connected clients 
-and sends it to the SoftwareSerial port.
-
-The IrDA should be connected to GPIO14 (D5) and GPIO12 (D6) and 3V and GND.
-When powered up, the IrDA Light can be checked with a iPhone front camera,
-and should only light up when data is sent. If not the inverted flag should be toggled.
-
-*/
-
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
 #include <SoftwareSerial.h>  // Use SoftwareSerial, the UART pins on DevKit are used for flashing.
