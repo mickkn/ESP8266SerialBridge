@@ -24,14 +24,18 @@ and should only light up when data is sent. If not the inverted flag should be t
     * [IrDA with RS232 interface](https://www.aliexpress.com/item/1005005630726621.html?spm=a2g0o.order_list.order_list_main.17.70c71802tpHpcY)
     * (optional) a case for the ESP.
 
-### Hardware
-![Hardware Diagram](images/diagram.jpg)
+### Hardware (ESP8266)
+![ESP8266 Diagram](images/diagram_esp8266.jpg)
 Power the ESP Module with USB, and power the IR Eye with the 3V Power from the Devkit.
 
 <div style="display: flex; justify-content: space-around;">
   <img src="images/irda.jpg" alt="IRDA" style="width: 45%;"/>
-  <img src="images/esp.jpg" alt="ESP" style="width: 45%;"/>
+  <img src="images/esp.jpg" alt="ESP8266" style="width: 45%;"/>
 </div>
+
+### Hardware (ESP32)
+![ESP32 Diagram](images/diagram_esp32.jpg)
+Power the ESP Module with USB, and power the IR Eye with the 3V Power from the Devkit.
 
 ### Software
 1. Open the .ino file in Arduino IDE.
