@@ -24,12 +24,12 @@ and should only light up when data is sent. If not the inverted flag should be t
     * (optional) a case for the ESP.
 
 ### Hardware
-![Hardware Diagram](img/diagram.jpg)
+![Hardware Diagram](images/diagram.jpg)
 Power the ESP Module with USB, and power the IR Eye with the 3V Power from the Devkit.
 
 <div style="display: flex; justify-content: space-around;">
-  <img src="img/irda.jpg" alt="IRDA" style="width: 45%;"/>
-  <img src="img/esp.jpg" alt="ESP" style="width: 45%;"/>
+  <img src="images/irda.jpg" alt="IRDA" style="width: 45%;"/>
+  <img src="images/esp.jpg" alt="ESP" style="width: 45%;"/>
 </div>
 
 ### Software
