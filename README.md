@@ -20,8 +20,8 @@ and should only light up when data is sent. If not the inverted flag should be t
 
 * Requirements
     * ESP8266/ESP32 devkit module (a cheap clone can do)
-    * [IR Eye with RS232 interface](https://www.aliexpress.com/item/1005005630726621.html?spm=a2g0o.order_list.order_list_main.17.70c71802tpHpcY)
-    * Some power for the ESP Module and CP2101 IR Eye
+    * [IrDA with RS232 interface](https://www.aliexpress.com/item/1005005630726621.html?spm=a2g0o.order_list.order_list_main.17.70c71802tpHpcY)
+    * (optional) a case for the ESP.
 
 ### Hardware
 ![Hardware Diagram](img/diagram.jpg)
