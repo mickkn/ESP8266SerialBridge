@@ -1,4 +1,4 @@
-# ESP8266SerialBridge
+# ESP8266/ESP32 Wi-Fi Serial Bridge
 Serial Wi-Fi Bridge for Kamstrup 403 Home Assistants Integration
 
 ## Usage
