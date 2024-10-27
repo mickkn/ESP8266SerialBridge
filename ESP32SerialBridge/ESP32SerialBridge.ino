@@ -8,7 +8,7 @@
 #include <WiFi.h>          // Use ESP32 WiFi library
 #include <WiFiClient.h>    // Use ESP32 WiFiClient
 
-#define VERSION "1.00"
+#define VERSION "1.0.0"
 
 // Configuration
 bool debug = true;         // Enable debug output on the hardware serial port
