@@ -1,41 +1,58 @@
 /*
 :File:        ESP8266SerialBridge.ino
 :Details:     ESP8266 WiFi <-> UART Bridge using Software UART
-:Date:        14-10-2024
+:Date:        27-10-2024
 :Author:      Mick K.
+*/
+
+/*
+Description:
+
+This sketch creates a WiFi <-> UART bridge using the ESP8266 module. 
+The sketch uses SoftwareSerial to create two COM ports, one for the 
+debug output and one for the IrDA communication. The sketch creates 
+two TCP servers, one for each COM port, and listens for incoming connections. 
+The sketch reads data from the SoftwareSerial ports and sends it to the 
+connected clients. The sketch also reads data from the connected clients 
+and sends it to the SoftwareSerial ports.
+
+The IrDA should be connected to GPIO14 (D5) and GPIO12 (D6) and 3V and GND.
+When powered up, the IrDA Light can be checked with a iPhone front camera,
+and should only light up when data is sent. If not the inverted flag should be toggled.
+
 */
 
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
-#include <SoftwareSerial.h>  // Include the SoftwareSerial library
-
-bool debug = true;
+#include <SoftwareSerial.h>  // Use SoftwareSerial, the UART pins on DevKit are used for flashing.
 
 #define VERSION "1.00"
 
-// WiFi Configuration
-const char *ssid = "";
-const char *pw = "";
+// Configuration
+bool debug = false;         // Enable debug output on the debug COM port RX = GPIO0 (D3), TX = GPIO2 (D4)
+bool inverted = true;       // Invert the Software UART logic, if IrDA is used.
+const char *ssid = "";      // WiFi SSID
+const char *pw = "";        // WiFi password
 const char *hostname = "ESP8266UART";
 
 // COM Port Configuration
 #define UART0_BAUD 1200  // Baud rate for Software UART0
 #define UART1_BAUD 1200  // Baud rate for Software UART1
-#define UART0_PORT 8880  // WiFi Port for Software UART0
-#define UART1_PORT 8881  // WiFi Port for Software UART1
+#define UART0_PORT 8880  // WiFi Port for Software UART0 (IrDA)
+#define UART1_PORT 8881  // WiFi Port for Software UART1 (Debug)
 #define bufferSize 1024  // Buffer size for UART data
 #define MAX_NMEA_CLIENTS 4
 #define NUM_COM 2
 #define DEBUG_COM 1  // Debug COM port 1
 
 // SoftwareSerial definitions: Debug UART on GPIO0 (D3) and GPIO2 (D4)
-SoftwareSerial softSerial0(14, 12, true);  // RX = GPIO14 (D5), TX = GPIO12 (D6)
+SoftwareSerial irSerial(14, 12, inverted);  // RX = GPIO14 (D5), TX = GPIO12 (D6)
 
 // Secondary UART on GPIO14 (D5) and GPIO12 (D6)
-SoftwareSerial softSerial1(0, 2);  // RX = GPIO0 (D3), TX = GPIO2 (D4) for debug
+SoftwareSerial debugSerial(0, 2);  // RX = GPIO0 (D3), TX = GPIO2 (D4) for debug
 
 // Map the COM array to SoftwareSerial instances
-SoftwareSerial *COM[NUM_COM] = {&softSerial0, &softSerial1};
+SoftwareSerial *COM[NUM_COM] = {&irSerial, &debugSerial};
 
 // WiFi server instances for each COM port
 WiFiServer server_0(UART0_PORT);
@@ -52,16 +69,16 @@ uint8_t buf2[bufferSize];
 uint16_t i2[NUM_COM] = {0, 0};
 
 void setup() {
+
+    // Delay for the Serial Monitor to start
     delay(500);
 
     // Begin SoftwareSerial for each COM port
     COM[0]->begin(UART0_BAUD);
     COM[1]->begin(UART1_BAUD);
 
-    if (debug) COM[DEBUG_COM]->println("\n\nESP8266 WiFi <-> UART Bridge v" VERSION);
-
     // Initialize WiFi connection
-    if (debug) COM[DEBUG_COM]->println("Open ESP Station mode");
+    if (debug) COM[DEBUG_COM]->println("\n\nOpen ESP8266 WiFi <-> UART Bridge v" VERSION);
     if (debug) COM[DEBUG_COM]->println("This is DEBUG on UART1 that will print all data flow.");
     WiFi.mode(WIFI_STA);
     WiFi.hostname(hostname);
