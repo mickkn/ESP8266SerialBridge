@@ -9,7 +9,7 @@
 #include <WiFiClient.h>
 #include <SoftwareSerial.h>  // Use SoftwareSerial, the UART pins on DevKit are used for flashing.
 
-#define VERSION "1.00"
+#define VERSION "1.0.0"
 
 // Configuration
 bool debug = true;         // Enable debug output on the hardware serial port
